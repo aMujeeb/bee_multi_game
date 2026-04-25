@@ -1,15 +1,20 @@
 package com.mujapps.bigbee.domain
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import kotlin.random.Random
 
 data class Game(//Using a data class to store game state. since it has special functions as 'copy' can update values of the game status dynamically
     val screenWidth: Int = 0, val screenHeight: Int = 0,
-    val gravity: Float = 0.2f, //This can increase when game proceed levels
-    val beeJumpImpulse: Float = -12f, // Jump velocity upwards
-    val beeMaxVelocity: Float = 25f,
-    val beeRadius: Float = 30f
+    val gravity: Float = 0.6f, //This can increase when game proceed levels
+    val beeJumpImpulse: Float = -10f, // Jump velocity upwards
+    val beeMaxVelocity: Float = 15f,
+    val beeRadius: Float = 30f,
+    val pipeWidth: Float = 150f,
+    val pipeVelocity: Float = 5f,
+    val pipeGapSize: Float = 250f // This can alter to mage game easier or harder
 ) {
     var status by mutableStateOf(GameStatus.Idle)
         private set
@@ -27,6 +32,10 @@ data class Game(//Using a data class to store game state. since it has special f
     )
         private set
 
+
+    //Adding List of pipes
+    var mPipePairs = mutableStateListOf<PipePair>()
+
     fun start() {
         status = GameStatus.Started
     }
@@ -40,6 +49,11 @@ data class Game(//Using a data class to store game state. since it has special f
     }
 
     fun updateGameProgress() {
+        mPipePairs.forEach { pare ->
+            if(isCollided(pare)){
+                gameOver()
+            }
+        }
         if (bee.y < 0) {
             stopTheBee()
             return
@@ -49,6 +63,29 @@ data class Game(//Using a data class to store game state. since it has special f
         }
         beeVelocity = (beeVelocity + gravity).coerceIn(-beeMaxVelocity, beeMaxVelocity)
         bee = bee.copy(y = bee.y + beeVelocity)
+
+        //Spawning new pipes
+        spawnPipes()
+    }
+
+    private fun spawnPipes() {
+        mPipePairs.forEach { it.x -= pipeVelocity }
+        mPipePairs.removeAll { it.x + pipeWidth < 0 }// Remove pipes out of screen
+        if (mPipePairs.isEmpty() || mPipePairs.last().x < screenWidth / 2) { //If no pipes or last pipe has juts passed the center point of the screen
+            val initialPipeX =
+                screenWidth.toFloat() + pipeWidth //Initial x position should be outside of the screen
+            val topHeight =
+                Random.nextFloat() * (screenHeight / 2) //Random generated pipe size will not exceed the height of the screen. nextFloat between 1 and -1
+            val bottomHeight = screenHeight - topHeight - pipeGapSize //Allow bee to pass through
+
+            val newPipePair = PipePair(
+                x = initialPipeX,
+                y = topHeight + pipeGapSize / 2,
+                topHeight = topHeight,
+                bottomHeight = bottomHeight
+            )
+            mPipePairs.add(newPipePair)
+        }
     }
 
     fun stopTheBee() {
@@ -63,6 +100,33 @@ data class Game(//Using a data class to store game state. since it has special f
 
     fun reStartGame() {
         resetBeePosition()
+        removeAllPipes()
         start()
+    }
+
+    //Remove pipes when Restart the game
+    fun removeAllPipes() {
+        mPipePairs.clear()
+    }
+
+    //Collision detection done by
+    private fun isCollided(pipePair: PipePair) : Boolean {
+        //Check Horizontal collision. Bee overlaps pipes X range
+        val beeRightEdge = bee.x + bee.radius
+        val beeLeftEdge = bee.x - bee.radius
+        val pipeLeftEdge = pipePair.x - pipeWidth /2
+        val pipeRightEdge = pipePair.x + pipeWidth / 2
+
+        val horizontalCollision = beeRightEdge > pipeLeftEdge && beeLeftEdge < pipeRightEdge
+
+        //Check the Bee within Vertical gap
+        val beeTopEdge = bee.y - beeRadius
+        val beeBottomEdge = bee.y + beeRadius
+        val gapTopEdge = pipePair.y - pipeGapSize / 2
+        val gapBottomEdge = pipePair.y + pipeGapSize / 2
+
+        val beeInGap = beeTopEdge > gapTopEdge && beeBottomEdge < gapBottomEdge
+
+        return horizontalCollision && !beeInGap
     }
 }
