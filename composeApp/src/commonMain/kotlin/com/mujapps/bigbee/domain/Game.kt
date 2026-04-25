@@ -8,7 +8,8 @@ data class Game(//Using a data class to store game state. since it has special f
     val screenWidth: Int = 0, val screenHeight: Int = 0,
     val gravity: Float = 0.2f, //This can increase when game proceed levels
     val beeJumpImpulse: Float = -12f, // Jump velocity upwards
-    val beeMaxVelocity: Float = 25f
+    val beeMaxVelocity: Float = 25f,
+    val beeRadius: Float = 30f
 ) {
     var status by mutableStateOf(GameStatus.Idle)
         private set
@@ -20,7 +21,8 @@ data class Game(//Using a data class to store game state. since it has special f
     var bee by mutableStateOf(
         BeeCharacter(
             x = screenWidth / 4f,
-            y = screenHeight / 2f
+            y = screenHeight / 2f,
+            radius = beeRadius
         )
     )
         private set
@@ -52,5 +54,15 @@ data class Game(//Using a data class to store game state. since it has special f
     fun stopTheBee() {
         beeVelocity = 0f
         bee = bee.copy(y = 0f)
+    }
+
+    private fun resetBeePosition() {
+        bee = bee.copy(y = (screenHeight / 2).toFloat())
+        beeVelocity = 0f
+    }
+
+    fun reStartGame() {
+        resetBeePosition()
+        start()
     }
 }
