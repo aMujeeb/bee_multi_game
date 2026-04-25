@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -56,6 +55,7 @@ import com.stevdza_san.sprite.component.drawSpriteView
 import com.stevdza_san.sprite.domain.SpriteSheet
 import com.stevdza_san.sprite.domain.SpriteSpec
 import com.stevdza_san.sprite.domain.rememberSpriteState
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.imageResource
 
 
@@ -67,6 +67,7 @@ const val PIPE_CAP_HEIGHT = 50f
 fun App() {
     MaterialTheme {
 
+        val mScope = rememberCoroutineScope()
         var screenWidth by remember { mutableStateOf(0) }
         var screenHeight by remember { mutableStateOf(0) }
 
@@ -296,7 +297,7 @@ fun App() {
                     image = mPipeImage,
                     dstOffset = IntOffset(
                         x = (pipePair.x - (mGame.pipeWidth / 2)).toInt(),
-                        y = (pipePair.y + mGame.pipeGapSize /2 + PIPE_CAP_HEIGHT).toInt()
+                        y = (pipePair.y + mGame.pipeGapSize / 2 + PIPE_CAP_HEIGHT).toInt()
                     ),
                     dstSize = IntSize(
                         width = mGame.pipeWidth.toInt(),
@@ -312,14 +313,14 @@ fun App() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Score 0",
+                text = "Score ${mGame.mCurrentScore}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 fontFamily = GamingFontFamily()
             )
 
             Text(
-                text = "Best 0",
+                text = "Best ${mGame.mBestScore}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 fontFamily = GamingFontFamily()
@@ -370,7 +371,7 @@ fun App() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Score : 0",
+                    text = "Score : ${mGame.mCurrentScore}",
                     color = Color.White,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 28.sp,
@@ -383,6 +384,9 @@ fun App() {
                     onClick = {
                         mGame.reStartGame() //Have to remove any Launch effect starts
                         mSpriteState.start()
+                        mScope.launch {
+                            mBackGroundOffsetX.snapTo(0f)
+                        }
                     },
                     modifier = Modifier.fillMaxWidth().height(54.dp)
                         .padding(start = 24.dp, end = 24.dp),

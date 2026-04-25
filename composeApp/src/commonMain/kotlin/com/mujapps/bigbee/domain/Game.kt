@@ -4,7 +4,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.russhwolf.settings.ObservableSettings
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import kotlin.random.Random
+
+const val HIGH_SCORE_KEY = "score_key"
 
 data class Game(//Using a data class to store game state. since it has special functions as 'copy' can update values of the game status dynamically
     val screenWidth: Int = 0, val screenHeight: Int = 0,
@@ -15,7 +20,10 @@ data class Game(//Using a data class to store game state. since it has special f
     val pipeWidth: Float = 150f,
     val pipeVelocity: Float = 5f,
     val pipeGapSize: Float = 250f // This can alter to mage game easier or harder
-) {
+) : KoinComponent {
+
+    //Injecting Settings object
+    private val mSettings: ObservableSettings by inject()
     var status by mutableStateOf(GameStatus.Idle)
         private set
 
@@ -36,12 +44,33 @@ data class Game(//Using a data class to store game state. since it has special f
     //Adding List of pipes
     var mPipePairs = mutableStateListOf<PipePair>()
 
+    var mCurrentScore by mutableStateOf(0)
+        private set
+
+    var mBestScore by mutableStateOf(0)
+        private set
+
+    init {
+        mBestScore = mSettings.getInt(
+            key = HIGH_SCORE_KEY,
+            defaultValue = 0
+        )
+
+        mSettings.addIntListener(
+            key = HIGH_SCORE_KEY,
+            defaultValue = 0
+        ) {
+            mBestScore = it
+        }
+    }
+
     fun start() {
         status = GameStatus.Started
     }
 
     fun gameOver() {
         status = GameStatus.Over
+        saveScore()
     }
 
     fun jump() {
@@ -50,8 +79,15 @@ data class Game(//Using a data class to store game state. since it has special f
 
     fun updateGameProgress() {
         mPipePairs.forEach { pare ->
-            if(isCollided(pare)){
+            if (isCollided(pare)) {
                 gameOver()
+                return
+            }
+
+            //Score counter
+            if(!pare.scored && bee.x > pare.x + pipeWidth / 2) {
+                pare.scored = true
+                mCurrentScore += 1
             }
         }
         if (bee.y < 0) {
@@ -101,6 +137,7 @@ data class Game(//Using a data class to store game state. since it has special f
     fun reStartGame() {
         resetBeePosition()
         removeAllPipes()
+        resetScore()
         start()
     }
 
@@ -110,11 +147,11 @@ data class Game(//Using a data class to store game state. since it has special f
     }
 
     //Collision detection done by
-    private fun isCollided(pipePair: PipePair) : Boolean {
+    private fun isCollided(pipePair: PipePair): Boolean {
         //Check Horizontal collision. Bee overlaps pipes X range
         val beeRightEdge = bee.x + bee.radius
         val beeLeftEdge = bee.x - bee.radius
-        val pipeLeftEdge = pipePair.x - pipeWidth /2
+        val pipeLeftEdge = pipePair.x - pipeWidth / 2
         val pipeRightEdge = pipePair.x + pipeWidth / 2
 
         val horizontalCollision = beeRightEdge > pipeLeftEdge && beeLeftEdge < pipeRightEdge
@@ -128,5 +165,16 @@ data class Game(//Using a data class to store game state. since it has special f
         val beeInGap = beeTopEdge > gapTopEdge && beeBottomEdge < gapBottomEdge
 
         return horizontalCollision && !beeInGap
+    }
+
+    private fun saveScore() {
+        if (mBestScore < mCurrentScore) {
+            mSettings.putInt(key = HIGH_SCORE_KEY, value = mCurrentScore)
+            mBestScore = mCurrentScore
+        }
+    }
+
+    private fun resetScore() {
+        mCurrentScore = 0
     }
 }
