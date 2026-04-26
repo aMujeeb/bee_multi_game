@@ -1,6 +1,8 @@
 package com.mujapps.bigbee.di
 
-import org.koin.core.module.Module
+import com.mujapps.bigbee.domain.AudioPlayer
+import org.koin.dsl.module
 
-actual val targetModule: Module
-    get() = TODO("Not yet implemented")
+actual val targetModule = module {
+    single<AudioPlayer> { AudioPlayer() }
+}

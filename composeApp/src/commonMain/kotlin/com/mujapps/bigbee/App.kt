@@ -10,6 +10,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +52,7 @@ import bigbee.composeapp.generated.resources.pipe_cap
 import com.mujapps.bigbee.domain.Game
 import com.mujapps.bigbee.domain.GameStatus
 import com.mujapps.bigbee.util.GamingFontFamily
+import com.mujapps.bigbee.util.getPlatform
 import com.stevdza_san.sprite.component.drawSpriteView
 import com.stevdza_san.sprite.domain.SpriteSheet
 import com.stevdza_san.sprite.domain.SpriteSpec
@@ -66,7 +68,7 @@ const val PIPE_CAP_HEIGHT = 50f
 @Preview
 fun App() {
     MaterialTheme {
-
+        val mPlatform = remember { getPlatform() } //This is for do certain things platform specifically if needed
         val mScope = rememberCoroutineScope()
         var screenWidth by remember { mutableStateOf(0) }
         var screenHeight by remember { mutableStateOf(0) }
@@ -74,7 +76,7 @@ fun App() {
         //Make it a mutable state since when Game over or other conditions apply the game state should be updated
         var mGame by remember {
             mutableStateOf(
-                Game()
+                Game(platform = mPlatform)
             )
         }
 
@@ -205,7 +207,10 @@ fun App() {
                         )
                     }
                 }
-                .clickable {
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                ) {
                     if (mGame.status == GameStatus.Started) {
                         mGame.jump()
                     }
