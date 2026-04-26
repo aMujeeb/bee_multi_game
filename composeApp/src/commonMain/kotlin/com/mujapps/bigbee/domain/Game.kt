@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.mujapps.bigbee.util.Platform
 import com.russhwolf.settings.ObservableSettings
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -11,15 +12,17 @@ import kotlin.random.Random
 
 const val HIGH_SCORE_KEY = "score_key"
 
-data class Game(//Using a data class to store game state. since it has special functions as 'copy' can update values of the game status dynamically
+data class Game(
+//Using a data class to store game state. since it has special functions as 'copy' can update values of the game status dynamically
+    val platform: Platform,
     val screenWidth: Int = 0, val screenHeight: Int = 0,
     val gravity: Float = 0.6f, //This can increase when game proceed levels
     val beeJumpImpulse: Float = -10f, // Jump velocity upwards
-    val beeMaxVelocity: Float = 15f,
+    val beeMaxVelocity: Float = if (platform == Platform.Android) 20f else 18f,
     val beeRadius: Float = 30f,
     val pipeWidth: Float = 150f,
-    val pipeVelocity: Float = 5f,
-    val pipeGapSize: Float = 250f // This can alter to mage game easier or harder
+    val pipeVelocity: Float = if (platform == Platform.Android) 5f else 4f,
+    val pipeGapSize: Float = if (platform == Platform.Android) 280f else 300f, // This can alter to mage game easier or harder
 ) : KoinComponent {
 
     //Injecting Settings object
@@ -98,7 +101,7 @@ data class Game(//Using a data class to store game state. since it has special f
             }
 
             //Score counter
-            if(!pare.scored && bee.x > pare.x + pipeWidth / 2) {
+            if (!pare.scored && bee.x > pare.x + pipeWidth / 2) {
                 pare.scored = true
                 mCurrentScore += 1
             }
@@ -117,8 +120,8 @@ data class Game(//Using a data class to store game state. since it has special f
         spawnPipes()
 
         //When to play the falling sound
-        if(beeVelocity > (beeVelocity / 1.1)) {
-            if(!isFallingSoundPlayed) {
+        if (beeVelocity > (beeVelocity / 1.1)) {
+            if (!isFallingSoundPlayed) {
                 mAudioPlayer.playFallingSound()
                 isFallingSoundPlayed = true
             }

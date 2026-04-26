@@ -45,7 +45,7 @@ actual class AudioPlayer(mContext: Context) {
     }
 
     actual fun playGamBackgroundSound() {
-        mLoopingPlayer.repeatMode = Player.REPEAT_MODE_ONE
+        mLoopingPlayer.repeatMode = Player.REPEAT_MODE_ONE //MODE on repeats indefinitely
         mLoopingPlayer.setMediaItem(mMediaItem[3])
         mLoopingPlayer.play()
     }
