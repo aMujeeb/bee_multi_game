@@ -2,10 +2,11 @@ package com.mujapps.bigbee
 
 import android.app.Application
 import com.mujapps.bigbee.di.initializeKoin
+import org.koin.android.ext.koin.androidContext
 
-class BeeApp: Application() {
+class BeeApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        initializeKoin()
+        initializeKoin { androidContext(this@BeeApp) }
     }
 }
