@@ -24,6 +24,9 @@ data class Game(//Using a data class to store game state. since it has special f
 
     //Injecting Settings object
     private val mSettings: ObservableSettings by inject()
+
+    //Injecting Audio player object
+    private val mAudioPlayer: AudioPlayer by inject()
     var status by mutableStateOf(GameStatus.Idle)
         private set
 
@@ -50,6 +53,11 @@ data class Game(//Using a data class to store game state. since it has special f
     var mBestScore by mutableStateOf(0)
         private set
 
+
+    //Game over should stop falling sound. Also when press jump should stop falling sound
+    private var isFallingSoundPlayed = false
+
+
     init {
         mBestScore = mSettings.getInt(
             key = HIGH_SCORE_KEY,
@@ -66,15 +74,20 @@ data class Game(//Using a data class to store game state. since it has special f
 
     fun start() {
         status = GameStatus.Started
+        mAudioPlayer.playGamBackgroundSound()
     }
 
     fun gameOver() {
         status = GameStatus.Over
+        mAudioPlayer.stopGameSound()
         saveScore()
+        isFallingSoundPlayed = false
     }
 
     fun jump() {
         beeVelocity = beeJumpImpulse
+        mAudioPlayer.playJumpSound()
+        isFallingSoundPlayed = false
     }
 
     fun updateGameProgress() {
@@ -102,6 +115,14 @@ data class Game(//Using a data class to store game state. since it has special f
 
         //Spawning new pipes
         spawnPipes()
+
+        //When to play the falling sound
+        if(beeVelocity > (beeVelocity / 1.1)) {
+            if(!isFallingSoundPlayed) {
+                mAudioPlayer.playFallingSound()
+                isFallingSoundPlayed = true
+            }
+        }
     }
 
     private fun spawnPipes() {
@@ -139,6 +160,7 @@ data class Game(//Using a data class to store game state. since it has special f
         removeAllPipes()
         resetScore()
         start()
+        isFallingSoundPlayed = false
     }
 
     //Remove pipes when Restart the game
@@ -176,5 +198,9 @@ data class Game(//Using a data class to store game state. since it has special f
 
     private fun resetScore() {
         mCurrentScore = 0
+    }
+
+    fun cleanUp() {
+        mAudioPlayer
     }
 }

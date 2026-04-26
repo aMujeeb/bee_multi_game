@@ -124,6 +124,7 @@ fun App() {
             onDispose {
                 mSpriteState.stop()
                 mSpriteState.cleanup()
+                mGame.cleanUp()
             }
         }
 
